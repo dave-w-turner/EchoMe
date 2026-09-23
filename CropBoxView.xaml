@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EchoMe.UserControls.CropBoxView"
+             x:Name="cropBoxView"
+             Loaded="OnContentViewLoaded">
+    <Grid HorizontalOptions="Fill" VerticalOptions="Fill">
+        <Grid x:Name="MoveSurfaceBody"
+              BackgroundColor="Transparent"
+              InputTransparent="False"
+              HorizontalOptions="Fill" 
+              VerticalOptions="Fill">
+            <Grid.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnBoxMoved" />
+                <PinchGestureRecognizer PinchUpdated="OnWorkspacePinched" />
+                <TapGestureRecognizer Tapped="OnWorkspaceTapped" />
+            </Grid.GestureRecognizers>
+
+            <Border x:Name="Border"
+                    Stroke="DeepSkyBlue"
+                    StrokeThickness="2"
+                    BackgroundColor="Transparent"
+                    InputTransparent="True"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill">
+            </Border>
+        </Grid>
+
+        <Border x:Name="ResizeHandle"
+                WidthRequest="25" 
+                HeightRequest="25"
+                BackgroundColor="DeepSkyBlue"
+                StrokeShape="RoundRectangle 8"
+                InputTransparent="False"
+                HorizontalOptions="End"
+                VerticalOptions="End">
+            <Border.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnBoxResized" />
+            </Border.GestureRecognizers>
+        </Border>
+    </Grid>
+</ContentView>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EchoMe.CropPhotoPage"
+             xmlns:local="clr-namespace:EchoMe"
+             xmlns:controls="clr-namespace:EchoMe.UserControls" 
+             x:Name="cropPhotoPage"
+             Title="Slice Your Image"
+             BackgroundColor="#212121"
+             Loaded="OnViewLoaded">
+
+        <VerticalStackLayout>
+            <Grid>
+                <Label Text="Slice Workspace ✂️" 
+                   FontSize="18" 
+                   FontAttributes="Bold" 
+                   TextColor="White"
+                   VerticalOptions="Center"
+                   Margin="10"
+                   Grid.Row="0"/>
+            <Button Grid.Row="1"
+                    Text="➕ Add Square"                     
+                    BackgroundColor="#FF9800" 
+                    TextColor="White" 
+                    FontAttributes="Bold"
+                    CornerRadius="12"
+                    HeightRequest="38"
+                    Padding="10"
+                    Margin="0,10,10,0"
+                    HorizontalOptions="End">
+                <Button.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=AddSquareTappedCommand}" />
+                </Button.GestureRecognizers>
+            </Button>
+        </Grid>
+        <CollectionView x:Name="OverviewListView" 
+                    ItemsSource="{Binding OverviewBadges, Source={x:Reference cropPhotoPage}}"
+                    SelectionMode="None"
+                    Margin="15,4,0,0"
+                    VerticalOptions="Center" 
+                    HorizontalOptions="Fill">
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border StrokeShape="RoundRectangle 10" 
+                        Stroke="{Binding BorderColor}" 
+                        StrokeThickness="1.5"
+                        BackgroundColor="{Binding BGColor}" 
+                        Padding="8,6"
+                        VerticalOptions="Center">
+                        <Label Text="{Binding BoxName}" 
+                           TextColor="White" 
+                           FontSize="11" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BadgeTappedCommand}"
+                                              CommandParameter="{Binding BoxId}" />
+                        </Border.GestureRecognizers>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        <Border StrokeShape="Rectangle"
+                    StrokeThickness="0"
+                    BackgroundColor="#151515"
+                    Margin="10,20,10,20"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="360"
+                    HeightRequest="420">
+
+            <controls:CroppingPane
+                    ImageSource="{Binding ImageSource, Source={x:Reference cropPhotoPage}}"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill" />
+        </Border>
+
+        <Label
+            Text="{Binding SelectedBoxIndicatorText, Source={x:Reference cropPhotoPage}}"
+            Padding="8,4, 4, 4"
+            TextColor="#FFEB3B"
+            FontSize="12"
+            FontAttributes="Bold"
+            VerticalOptions="Center"
+            HorizontalOptions="Start" />
+            
+        <Border StrokeShape="RoundRectangle 12" 
+            BackgroundColor="#37474F" 
+            Padding="8,4"
+            Margin="10,2">
+            
+            <Grid ColumnDefinitions="*, Auto, Auto" ColumnSpacing="12">
+                <Entry x:Name="ActiveBoxNameEntry"
+                       Grid.Column="0"
+                       Placeholder="Enter text to speak..."
+                       PlaceholderColor="#90A4AE"
+                       Text="{Binding ActiveBoxNameEntryText, Source={x:Reference cropPhotoPage}}"                       
+                       TextColor="White"
+                       FontSize="14"
+                       HeightRequest="36"
+                       VerticalOptions="Center" />
+
+                <Label Grid.Column="1" Text="🏷️" FontSize="12" FontAttributes="Bold" VerticalOptions="Center" HorizontalOptions="Start" /> 
+
+                <Button Grid.Column="2"
+                        x:Name="DeleteBoxButton"
+                        Text="🗑️"
+                        BackgroundColor="#E53935"
+                        TextColor="White"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        CornerRadius="10"
+                        Padding="0"
+                        VerticalOptions="Center"
+                        Clicked="OnDeleteCropBoxClicked"
+                        />
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="*, *" ColumnSpacing="12" Margin="10,5">
+                <Button Grid.Column="0" 
+                        Text="Discard ❌" 
+                        BackgroundColor="#E53935" 
+                        TextColor="White" 
+                        HeightRequest="38" 
+                        CornerRadius="12" 
+                        Padding="0"
+                        Clicked="OnCancelClicked"/>
+
+                <Button Grid.Column="1" 
+                        Text="Finish &amp; Extract ✔️" 
+                        BackgroundColor="#4CAF50" 
+                        TextColor="White" 
+                        FontAttributes="Bold" 
+                        HeightRequest="38" 
+                        CornerRadius="12" 
+                        Padding="0"
+                        Clicked="OnProcessCropsClicked" />
+            </Grid>
+        </VerticalStackLayout>
+</ContentPage>

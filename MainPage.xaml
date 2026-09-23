@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:EchoMe"
+             xmlns:models="clr-namespace:EchoMe.Models"
+             SafeAreaEdges="Container"
+             x:DataType="local:MainPage"
+             x:Class="EchoMe.MainPage"
+             x:Name="homePage"
+             BackgroundColor="#FFFDE7">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="KidCardStyle" TargetType="Border">
+                <Setter Property="StrokeShape" Value="RoundRectangle 24" />
+                <Setter Property="Stroke" Value="#4CAF50" />
+                <Setter Property="StrokeThickness" Value="3" />
+                <Setter Property="BackgroundColor" Value="#FFFFFF" />
+                <Setter Property="Padding" Value="12" />
+                <Setter Property="Margin" Value="8" />
+                <Setter Property="Shadow">
+                    <Setter.Value>
+                        <Shadow Brush="#000000" Offset="2,4" Radius="4" Opacity="0.1" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto, *, Auto" 
+          Padding="24,12" 
+          RowSpacing="8">
+
+        <IndicatorView x:Name="GridIndicator"
+                   Grid.Row="1"
+                   IndicatorColor="LightGray"
+                   SelectedIndicatorColor="#9C27B0"
+                   HorizontalOptions="Center"
+                   VerticalOptions="End"
+                   Margin="0,0,0,10" />
+
+        <FlexLayout Wrap="Wrap" 
+            Direction="Row" 
+            JustifyContent="SpaceBetween" 
+            AlignItems="Center" 
+            Margin="0,0,0,12"
+            BackgroundColor="#FFFDE7">
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="Welcome To EchoMe!" 
+                   FontSize="28" 
+                   FontAttributes="Bold" 
+                   TextColor="#FF5722" 
+                   VerticalOptions="Center" />
+                <Label Text=" 🌟" 
+                   FontSize="40" 
+                   FontAttributes="Bold" 
+                   TextColor="#FF5722" 
+                   VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Button Text="⚙️ Manage Board"
+                FontSize="16"
+                FontAttributes="Bold"
+                BackgroundColor="#9C27B0"
+                TextColor="White"
+                CornerRadius="20"
+                HeightRequest="50"
+                Padding="16,10"
+                Margin="0,4"
+                Clicked="OnManageBoardClicked" />
+        </FlexLayout>
+
+        <CarouselView Grid.Row="1" 
+              ItemsSource="{Binding CarouselPages}"
+              Loop="False"
+              HeightRequest="420"
+              VerticalOptions="Center"
+              HorizontalOptions="Fill"
+              Margin="0,15,0,0"
+              IndicatorView="GridIndicator">
+
+            <CarouselView.ItemTemplate>
+                <DataTemplate x:DataType="models:BoardPageModel">
+                    <Grid Padding="4" VerticalOptions="Fill" HorizontalOptions="Fill">
+
+                        <Grid BindableLayout.ItemsSource="{Binding Cards}"
+                              HorizontalOptions="Start"
+                              VerticalOptions="Start">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:HomeCardDisplayModel">
+                                    <HorizontalStackLayout Spacing="0">
+                                        <Grid Padding="0" Margin="6">
+                                            <Border Style="{StaticResource KidCardStyle}"
+                                                    WidthRequest="140" 
+                                                    HeightRequest="140">
+
+                                                <Grid RowDefinitions="*, Auto" Padding="4">
+                                                    <Image Grid.Row="0" 
+                                                           Source="{Binding DecodedImage}" 
+                                                           Aspect="AspectFit" 
+                                                           HorizontalOptions="Center" 
+                                                           VerticalOptions="Center"
+                                                           Margin="2"/>
+
+                                                    <Label Grid.Row="1" 
+                                                           Text="{Binding LabelText}" 
+                                                           FontSize="16" 
+                                                           FontAttributes="Bold" 
+                                                           TextColor="#37474F" 
+                                                           HorizontalOptions="Center" 
+                                                           VerticalOptions="End"/>
+                                                </Grid>
+
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding Source={x:Reference homePage}, Path=CardTappedCommand}" 
+                                                                          CommandParameter="{Binding .}" />
+                                                </Border.GestureRecognizers>
+                                            </Border>
+                                        </Grid>
+                                    </HorizontalStackLayout>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </Grid>
+
+                    </Grid>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <Border Grid.Row="2" 
+            BackgroundColor="#FFEB3B" 
+            Stroke="#FBC02D"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 8"
+            Padding="10">
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                <Entry Grid.Column="0"
+                   x:Name="WordsEntry"
+                   Placeholder="Type your words here..." 
+                   PlaceholderColor="#9E9E9E"
+                   FontSize="20" 
+                   TextColor="#212121"
+                   BackgroundColor="Transparent"
+                   VerticalOptions="Center" />
+
+                <Label Grid.Column="1" 
+                   Text="💬" 
+                   FontSize="30" 
+                   VerticalOptions="Center"
+                   HorizontalOptions="End" />
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>

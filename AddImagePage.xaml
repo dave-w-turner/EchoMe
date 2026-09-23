@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EchoMe.AddImagePage"
+             Title="Add New Visuals"
+             BackgroundColor="#E8F5E9">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="OptionCardStyle" TargetType="Border">
+                <Setter Property="StrokeShape" Value="RoundRectangle 24" />
+                <Setter Property="Stroke" Value="#81C784" />
+                <Setter Property="StrokeThickness" Value="3" />
+                <Setter Property="BackgroundColor" Value="White" />
+                <Setter Property="Padding" Value="20" />
+                <Setter Property="Margin" Value="0,0,0,16" />
+                <Setter Property="Shadow">
+                    <Setter.Value>
+                        <Shadow Brush="#000000" Offset="2,4" Radius="4" Opacity="0.08" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <Grid RowDefinitions="Auto, *" Padding="20" RowSpacing="12">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto, *" Margin="0,0,0,12">
+                <Button Grid.Column="0" 
+                        Text="⬅️ Back" 
+                        BackgroundColor="#78909C" 
+                        TextColor="White" 
+                        FontAttributes="Bold"
+                        CornerRadius="16"
+                        Clicked="OnBackClicked" />
+                <Label Grid.Column="1" 
+                       Text="Choose Photo Source 📸" 
+                       FontSize="22" 
+                       FontAttributes="Bold" 
+                       TextColor="#2E7D32" 
+                       HorizontalOptions="Center" 
+                       VerticalOptions="Center"/>
+            </Grid>
+
+            <VerticalStackLayout Grid.Row="1" VerticalOptions="Fill" Margin="0,20,0,0">
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <Grid RowDefinitions="Auto, Auto" RowSpacing="12">
+                        <Label Grid.Row="0" 
+                               Text="Option A: Select Image File 📂" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#37474F" />
+                        <Button Grid.Row="1"
+                                Text="Pick from Photo Gallery"
+                                FontSize="18"
+                                FontAttributes="Bold"
+                                BackgroundColor="#0288D1"
+                                TextColor="White"
+                                HeightRequest="60"
+                                CornerRadius="16"
+                                Clicked="OnPickFileClicked" />
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource OptionCardStyle}" Margin="0,15,0,0">
+                    <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="8">
+                        <Label Grid.Row="0" 
+                               Text="Option B: Take a New Photo 📷" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#37474F" />
+                        <Label Grid.Row="1" 
+                               Text="Take a picture of objects or toys to slice them into individual board items."
+                               FontSize="14"
+                               TextColor="#757575" />
+                        <Button Grid.Row="2"
+                                Text="Open Camera &amp; Slice"
+                                FontSize="18"
+                                FontAttributes="Bold"
+                                BackgroundColor="#E91E63"
+                                TextColor="White"
+                                HeightRequest="70"
+                                CornerRadius="16"
+                                Margin="0,8,0,0"
+                                Clicked="OnCapturePhotoClicked" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>
+

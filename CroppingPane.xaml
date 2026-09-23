@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EchoMe.UserControls.CroppingPane"
+             xmlns:controls="clr-namespace:EchoMe.UserControls" 
+             x:Name="cropPane">
+
+    <Grid x:Name="CanvasContainer" 
+          WidthRequest="360" 
+          HeightRequest="420" 
+          BackgroundColor="#151515"
+          HorizontalOptions="Center"
+          VerticalOptions="Center"
+          SizeChanged="OnCanvasSizeChanged">
+        <Grid.GestureRecognizers>
+            <PinchGestureRecognizer PinchUpdated="OnWorkspacePinched" />
+            <PanGestureRecognizer PanUpdated="OnWorkspacePanned" />
+        </Grid.GestureRecognizers>
+
+        <Image x:Name="CapturedRawPhoto"
+               Source="{Binding ImageSource, Source={x:Reference cropPane}}"
+               Aspect="AspectFit" 
+               HorizontalOptions="Fill" 
+               VerticalOptions="Fill" />
+        <AbsoluteLayout x:Name="OverlayCanvas" 
+                        HorizontalOptions="Fill" 
+                        VerticalOptions="Fill"
+                        SizeChanged="OnOverlayCanvasSizeChanged" />
+    </Grid>
+</ContentView>
