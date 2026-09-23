@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:EchoMe"
+             xmlns:models="clr-namespace:EchoMe.Models"
              x:DataType="local:ManageCollectionPage"
              x:Class="EchoMe.ManageCollectionPage"
              Title="Manage Collection"
@@ -53,7 +54,7 @@
             </CollectionView.ItemsLayout>
 
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="local:ManageItemViewModel">
+                <DataTemplate x:DataType="models:ManageItemViewModel">
                     <Grid Padding="2" 
                           IsClippedToBounds="False"
                           HorizontalOptions="Center" 
