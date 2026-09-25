@@ -239,8 +239,8 @@ public partial class CroppingPane : ContentView
                 break;
 
             case GestureStatus.Running:
-                double targetX = CurrentlySelectedBox?.StartTranslationX ?? 0 + e.TotalX;
-                double targetY = CurrentlySelectedBox?.StartTranslationY ?? 0 + e.TotalY;
+                double targetX = (CurrentlySelectedBox?.StartTranslationX ?? 0) + e.TotalX;
+                double targetY = (CurrentlySelectedBox?.StartTranslationY ?? 0) + e.TotalY;
 
                 double maxPanX = CapturedRawPhoto.Width * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
                 double maxPanY = CapturedRawPhoto.Height * (CropBoxView.CurrentWorkspaceScale - 1) / 2;

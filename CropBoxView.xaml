@@ -14,6 +14,7 @@
                 <PanGestureRecognizer PanUpdated="OnBoxMoved" />
                 <PinchGestureRecognizer PinchUpdated="OnWorkspacePinched" />
                 <TapGestureRecognizer Tapped="OnWorkspaceTapped" />
+                <PanGestureRecognizer PanUpdated="OnWorkspacePanned" />
             </Grid.GestureRecognizers>
 
             <Border x:Name="Border"

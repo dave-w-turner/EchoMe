@@ -248,7 +248,7 @@ public partial class CropBoxView : ContentView
                 return;
             }
 
-            if (targetImage.Width <= 10 || targetImage.Height <= 10) return;
+            if (targetImage.Width <= 10 || targetImage.Height <= 10 || Border.Width < targetImage.Width && Border.Height < targetImage.Height) return;
 
             switch (e.StatusType)
             {
