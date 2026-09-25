@@ -22,6 +22,15 @@ public partial class ManageCollectionPage : ContentPage
         }
     }
 
+    public static readonly BindableProperty GridSpanProperty =
+        BindableProperty.Create(nameof(GridSpan), typeof(int), typeof(CropPhotoPage), null);
+
+    public int GridSpan
+    {
+        get => (int)GetValue(GridSpanProperty);
+        set => SetValue(GridSpanProperty, value);
+    }
+
     public ICommand ToggleStatusCommand { get; private set; }
     public ICommand DeletePermanentItemCommand { get; private set; }
     public ICommand EditCropItemCommand { get; private set; }
@@ -33,6 +42,15 @@ public partial class ManageCollectionPage : ContentPage
         DeletePermanentItemCommand = new Command<ManageItemViewModel>(async (item) => await OnDeletePermanentItemAsync(item));
         EditCropItemCommand = new Command<ManageItemViewModel>(async (item) => await OnEditCropItemAsync(item));
         BindingContext = this;
+
+        if (Width > Height)
+        {
+            GridSpan = 5;
+        }
+        else
+        {
+            GridSpan = 3;
+        }
     }
 
     protected override async void OnAppearing()
@@ -58,7 +76,7 @@ public partial class ManageCollectionPage : ContentPage
                 LabelText = card.LabelText,
                 ImageUrl = ImageSource.FromStream(() => new MemoryStream(card.ImageBytes)),
                 IsOnHomeScreen = isPinned,
-                StatusColor = isPinned ? Colors.DeepSkyBlue : Colors.LightGray,
+                StatusColor = isPinned ? Colors.DeepSkyBlue : Colors.DarkGray,
                 StatusText = isPinned ? "✔️ Active" : "💤 Hidden"
             });
         }
@@ -100,7 +118,7 @@ public partial class ManageCollectionPage : ContentPage
         {
             await _db.RemoveFromHomeScreenAsync(item.CardId);
             item.IsOnHomeScreen = false;
-            item.StatusColor = Colors.LightGray;
+            item.StatusColor = Colors.DarkGray;
             item.StatusText = "💤 Hidden";
         }
         else
@@ -121,4 +139,16 @@ public partial class ManageCollectionPage : ContentPage
 
     private async void OnBackClicked(object? sender, EventArgs e) =>
         await Shell.Current.GoToAsync("///MainPage");
+
+    private void OnPageSizeChanged(object? sender, EventArgs e)
+    {
+        if (Width > Height)
+        {
+            GridSpan = 5;
+        }
+        else
+        {
+            GridSpan = 3;
+        }
+    }
 }

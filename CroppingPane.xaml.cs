@@ -76,23 +76,20 @@ public partial class CroppingPane : ContentView
 
         CanvasContainer.Children.Add(newBox);
 
-        if (CurrentlySelectedBox != null)
-        {
-            double newBoxWidth = CanvasContainer.Width - 100;
-            double newBoxHeight = CanvasContainer.Height - 100;
+        double newBoxWidth = CurrentlySelectedBox == null ? Width : Width - 100;
+        double newBoxHeight = CurrentlySelectedBox == null ? Height : Height - 100;
 
-            spawnX = CanvasContainer.X + (CanvasContainer.Width - newBoxWidth) / 2;
-            spawnY = CanvasContainer.Y + (CanvasContainer.Height - newBoxHeight) / 2;
+        spawnX = X + (Width - newBoxWidth) / 2;
+        spawnY = Y + (Height - newBoxHeight) / 2;
 
-            if (spawnX < 0) spawnX = 0;
-            if (spawnY < 0) spawnY = 0;
+        if (spawnX < 0) spawnX = 0;
+        if (spawnY < 0) spawnY = 0;
 
-            newBox.WidthRequest = newBoxWidth;
-            newBox.HeightRequest = newBoxHeight;
+        newBox.WidthRequest = newBoxWidth;
+        newBox.HeightRequest = newBoxHeight;
 
-            AbsoluteLayout.SetLayoutBounds(newBox, new Rect(spawnX, spawnY, newBoxWidth, newBoxHeight));
-            AbsoluteLayout.SetLayoutFlags(newBox, AbsoluteLayoutFlags.None);
-        }
+        AbsoluteLayout.SetLayoutBounds(newBox, new Rect(spawnX, spawnY, newBoxWidth, newBoxHeight));
+        AbsoluteLayout.SetLayoutFlags(newBox, AbsoluteLayoutFlags.None);
 
         Boxes.Add(newBox, existingCard != null ? existingCard.LabelText : boxName);
         Boxes = Boxes = Boxes.OrderBy(item => item.Value)
@@ -266,5 +263,13 @@ public partial class CroppingPane : ContentView
             OverlayCanvasWidth = OverlayCanvas.Width;
             OverlayCanvasHeight = OverlayCanvas.Height;
         }
+    }
+
+    public void UpdateImageHeight(int height)
+    {
+        CapturedRawPhoto.HeightRequest = height;
+
+        if (height == 420)
+            CapturedRawPhoto.WidthRequest = 360;
     }
 }

@@ -45,13 +45,11 @@ public partial class MainPage : ContentPage
                 });
             }
 
-            // Chunk our flat database items into groups of 8
             var chunks = flatCardsList.Chunk(8);
 
             CarouselPages.Clear();
             foreach (var chunk in chunks)
             {
-                // Build an explicit page object for each group
                 var newPage = new BoardPageModel();
                 foreach (var card in chunk)
                 {

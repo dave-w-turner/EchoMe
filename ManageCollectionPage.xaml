@@ -6,11 +6,12 @@
              x:DataType="local:ManageCollectionPage"
              x:Class="EchoMe.ManageCollectionPage"
              Title="Manage Collection"
-             BackgroundColor="#ECEFF1">
-
+             BackgroundColor="#ECEFF1"
+             SizeChanged="OnPageSizeChanged" >
     <Grid RowDefinitions="Auto, *" Padding="16" RowSpacing="12">
+
         <VerticalStackLayout Grid.Row="0">
-            <Label Text="Tap to Pin or Unpin Board Items 📌" 
+            <Label Text="Tap to Pin or Unpin Board Items 📌"
                    FontSize="21" 
                    FontAttributes="Bold" 
                    HorizontalOptions="Center" 
@@ -20,25 +21,25 @@
 
             <Grid ColumnDefinitions="*, Auto" Margin="0,20,0,0">
                 <Button Grid.Column="0"
-                    Text="⬅️ Back" 
-                    BackgroundColor="#607D8B" 
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    CornerRadius="16" 
-                    HeightRequest="45"
-                    HorizontalOptions="Start"
-                    Clicked="OnBackClicked"/>
+                        Text="⬅ Back"
+                        BackgroundColor="#607D8B" 
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="16" 
+                        HeightRequest="45"
+                        HorizontalOptions="Start"
+                        Clicked="OnBackClicked"/>
 
                 <Button Grid.Column="1"
-                    Text="➕ Add New Images"
-                    FontSize="16"
-                    FontAttributes="Bold"
-                    BackgroundColor="#00BCD4"
-                    TextColor="White"
-                    CornerRadius="20"
-                    Padding="16,10"
-                    HeightRequest="50"
-                    Clicked="OnAddImageClicked" />
+                        Text="➕ Add New Images"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="#00BCD4"
+                        TextColor="White"
+                        CornerRadius="20"
+                        Padding="16,10"
+                        HeightRequest="50"
+                        Clicked="OnAddImageClicked" />
             </Grid>
         </VerticalStackLayout>
 
@@ -48,27 +49,67 @@
 
             <CollectionView.ItemsLayout>
                 <GridItemsLayout Orientation="Vertical" 
-                                 Span="4" 
-                                 VerticalItemSpacing="8" 
-                                 HorizontalItemSpacing="8" />
+                                 Span="{Binding GridSpan}" 
+                                 VerticalItemSpacing="12" 
+                                 HorizontalItemSpacing="12" />
             </CollectionView.ItemsLayout>
 
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:ManageItemViewModel">
-                    <Grid Padding="2" 
-                          IsClippedToBounds="False"
-                          HorizontalOptions="Center" 
-                          VerticalOptions="Center">
+                    <VerticalStackLayout Padding="0,10,0,0" Margin="2">
+                        <HorizontalStackLayout
+                              BackgroundColor="Transparent"
+                              Spacing="4" 
+                              Margin="0,0,1,5"
+                              HorizontalOptions="End">
+                            
+                            <Border WidthRequest="22"
+                                HeightRequest="22"
+                                BackgroundColor="#0288D1"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 11"
+                                HorizontalOptions="Start"
+                                VerticalOptions="Center">
+
+                                <Label Text="✏️"
+                                   FontSize="10"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   Margin="0,0,0,1" />
+
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=EditCropItemCommand}" 
+                                              CommandParameter="{Binding}" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <Border WidthRequest="22"
+                                HeightRequest="22"
+                                BackgroundColor="#E53935"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 11"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center">
+
+                                <Label Text="❌"
+                                   FontSize="9"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=DeletePermanentItemCommand}" 
+                                              CommandParameter="{Binding}" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </HorizontalStackLayout>
 
                         <Border StrokeShape="RoundRectangle 16" 
                             Stroke="{Binding StatusColor}" 
                             StrokeThickness="3" 
                             BackgroundColor="White"
-                            WidthRequest="110"
-                            HeightRequest="110"
-                            Margin="4,4,4,4"
-                            HorizontalOptions="Center"
-                            VerticalOptions="Center">
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill"
+                            HeightRequest="100">
 
                             <Grid RowDefinitions="Auto, *, Auto" Padding="6">
                                 <Label Grid.Row="0" 
@@ -76,13 +117,13 @@
                                    TextColor="{Binding StatusColor}" 
                                    FontSize="10" 
                                    FontAttributes="Bold" 
-                                   HorizontalOptions="End"
-                                   Margin="0,0,2,0"/>
+                                   HorizontalOptions="Center" 
+                                   Margin="0, 0, 0, 5"/>
 
                                 <Image Grid.Row="1" 
                                    Source="{Binding ImageUrl}" 
                                    Aspect="AspectFit"
-                                   Margin="2"/>
+                                   Margin="2" />
 
                                 <Label Grid.Row="2" 
                                    Text="{Binding LabelText}" 
@@ -98,63 +139,8 @@
                                           CommandParameter="{Binding}" />
                             </Border.GestureRecognizers>
                         </Border>
-
-                        <HorizontalStackLayout HorizontalOptions="Start" 
-                                   VerticalOptions="Start" 
-                                   Margin="0" 
-                                   Spacing="5"
-                                   IsClippedToBounds="False">
-
-                            <Grid WidthRequest="22"
-                                  HeightRequest="22"
-                                  BackgroundColor="#0288D1"
-                                  HorizontalOptions="Center"
-                                  VerticalOptions="Center">
-
-                                <Grid.Clip>
-                                    <EllipseGeometry Center="11,11" RadiusX="11" RadiusY="11" />
-                                </Grid.Clip>
-
-                                <Path Data="M3,17.25V21H6.75L17.81,9.94L14.06,6.19L3,17.25M20.71,7.04C21.1,6.65 21.1,6.02 20.71,5.63L18.37,3.29C17.98,2.9 17.35,2.9 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04Z" 
-                                      Fill="White"
-                                      Aspect="Uniform"
-                                      WidthRequest="12"
-                                      HeightRequest="12"
-                                      HorizontalOptions="Center"
-                                      VerticalOptions="Center" />
-
-                                <Grid.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=EditCropItemCommand}" 
-                                              CommandParameter="{Binding}" />
-                                </Grid.GestureRecognizers>
-                            </Grid>
-
-                            <Grid WidthRequest="22"
-                                  HeightRequest="22"
-                                  BackgroundColor="#E53935"
-                                  HorizontalOptions="Center"
-                                  VerticalOptions="Center">
-
-                                <Grid.Clip>
-                                    <EllipseGeometry Center="11,11" RadiusX="11" RadiusY="11" />
-                                </Grid.Clip>
-
-                                <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" 
-                                      Fill="White"
-                                      Aspect="Uniform"
-                                      WidthRequest="10"
-                                      HeightRequest="10"
-                                      HorizontalOptions="Center"
-                                      VerticalOptions="Center" />
-
-                                <Grid.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=DeletePermanentItemCommand}" 
-                                              CommandParameter="{Binding}" />
-                                </Grid.GestureRecognizers>
-                            </Grid>
-                        </HorizontalStackLayout>
-                    </Grid>
-                </DataTemplate> 
+                    </VerticalStackLayout>
+                </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
     </Grid>

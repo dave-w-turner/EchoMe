@@ -4,7 +4,7 @@
              x:Class="EchoMe.UserControls.CropBoxView"
              x:Name="cropBoxView"
              Loaded="OnContentViewLoaded">
-    <Grid HorizontalOptions="Fill" VerticalOptions="Fill">
+    <Grid x:Name="gridCropboxContainer" HorizontalOptions="Fill" VerticalOptions="Fill">
         <Grid x:Name="MoveSurfaceBody"
               BackgroundColor="Transparent"
               InputTransparent="False"

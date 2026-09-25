@@ -3,11 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EchoMe.UserControls.CroppingPane"
              xmlns:controls="clr-namespace:EchoMe.UserControls" 
-             x:Name="cropPane">
+             x:Name="cropPane"
+             VerticalOptions="Fill"
+             HorizontalOptions="Fill">
 
     <Grid x:Name="CanvasContainer" 
-          WidthRequest="360" 
-          HeightRequest="420" 
           BackgroundColor="#151515"
           HorizontalOptions="Center"
           VerticalOptions="Center"
@@ -23,7 +23,7 @@
                HorizontalOptions="Fill" 
                VerticalOptions="Fill" />
         <AbsoluteLayout x:Name="OverlayCanvas" 
-                        HorizontalOptions="Fill" 
+                        HorizontalOptions="Center" 
                         VerticalOptions="Fill"
                         SizeChanged="OnOverlayCanvasSizeChanged" />
     </Grid>

@@ -246,11 +246,6 @@ public partial class CropPhotoPage : ContentPage
         else
             ActiveBoxNameEntryText = string.Empty;
 
-        if (e.Id == null || e.Id == 0)
-        {
-            ActiveBoxNameEntry?.Focus();
-        }
-
         DeleteBoxButton?.IsEnabled = true;
         RefreshOverviewBadges();
     }
@@ -272,6 +267,7 @@ public partial class CropPhotoPage : ContentPage
             if (string.IsNullOrWhiteSpace(box.Value))
             {
                 CroppingPane.SelectBox(box.Key);
+                ActiveBoxNameEntry?.Focus();
                 await DisplayAlertAsync("Name Required 🏷️", "Every selection box must have speech text configured!", "Fix It");
                 return;
             }
@@ -286,6 +282,7 @@ public partial class CropPhotoPage : ContentPage
                     if (boxes.Any() && boxes.FirstOrDefault(b => b.Name != box.Key.Name) == null || await db.CheckDuplicate(box.Key.Name))
                     {
                         CroppingPane.SelectBox(box.Key);
+                        ActiveBoxNameEntry?.Focus();
                         await DisplayAlertAsync("Duplicate Speach Text ⚠️", $"An existing item name '{box.Key.Name}' already exists! Please enter a different value!", "Fix It");
                         return;
                     }
@@ -405,4 +402,79 @@ public partial class CropPhotoPage : ContentPage
         }
     }
 
+    private void OnPageSizeChanged(object? sender, EventArgs e)
+    {
+        if (RootLayoutGrid == null || WorkspaceContainer == null || FormPanel == null || HeaderPanel == null) return;
+
+        if (Width > Height)
+        {
+            RootLayoutGrid.RowDefinitions = new RowDefinitionCollection { new RowDefinition(GridLength.Star) };
+            RootLayoutGrid.ColumnDefinitions = new ColumnDefinitionCollection
+            {
+                new ColumnDefinition(new GridLength(380)),
+                new ColumnDefinition(GridLength.Star)
+            };
+
+            HeaderPanel.IsVisible = false;
+
+            Grid.SetRow(WorkspaceContainer, 0);
+            Grid.SetColumn(WorkspaceContainer, 0);
+            WorkspaceContainer.Margin = new Thickness(6, 0, 0, 0);
+
+            WorkspaceContainer.RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Auto)];
+
+            var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
+            if (croppingBorder != null)
+            {
+                croppingBorder.WidthRequest = 360;
+                croppingBorder.HeightRequest = 220;
+                croppingBorder.HorizontalOptions = LayoutOptions.Center;
+                croppingBorder.VerticalOptions = LayoutOptions.Start;
+                croppingBorder.Margin = new Thickness(0, 4, 0, 0);
+
+                CroppingPane.CurrentInstance.UpdateImageHeight(220);
+                CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(220);
+            }
+                        
+            Grid.SetRow(FormPanel, 0);
+            Grid.SetColumn(FormPanel, 1);
+            FormPanel.WidthRequest = -1;
+            FormPanel.HorizontalOptions = LayoutOptions.Fill;
+            FormPanel.VerticalOptions = LayoutOptions.Center;
+            FormPanel.Margin = new Thickness(12, 0, 16, 0);
+        }
+        else
+        {
+            RootLayoutGrid.RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star)];
+            RootLayoutGrid.ColumnDefinitions = [new ColumnDefinition(GridLength.Star)];
+
+            HeaderPanel.IsVisible = true;
+            Grid.SetRow(HeaderPanel, 0);
+            Grid.SetColumn(HeaderPanel, 0);
+
+            Grid.SetRow(WorkspaceContainer, 1);
+            Grid.SetColumn(WorkspaceContainer, 0);
+            WorkspaceContainer.Margin = new Thickness(0, 0, 0, 140);
+            WorkspaceContainer.RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star)];
+
+            var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
+            if (croppingBorder != null)
+            {
+                croppingBorder.WidthRequest = 360;
+                croppingBorder.HeightRequest = 420;
+                croppingBorder.HorizontalOptions = LayoutOptions.Center;
+                croppingBorder.VerticalOptions = LayoutOptions.Start;
+
+                CroppingPane.CurrentInstance.UpdateImageHeight(420);
+                CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(420);
+            }
+
+            Grid.SetRow(FormPanel, 1);
+            Grid.SetColumn(FormPanel, 0);
+            FormPanel.WidthRequest = -1;
+            FormPanel.HorizontalOptions = LayoutOptions.Fill;
+            FormPanel.VerticalOptions = LayoutOptions.End;
+            FormPanel.Margin = new Thickness(4, 4, 4, 0);
+        }
+    }
 }
