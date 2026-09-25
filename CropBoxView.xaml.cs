@@ -1,6 +1,5 @@
 using EchoMe.Database;
 using EchoMe.ExtensionMethods;
-using Microsoft.Maui.Layouts;
 
 namespace EchoMe.UserControls;
 
@@ -39,10 +38,9 @@ public partial class CropBoxView : ContentView
     }
 
     private void OnContentViewLoaded(object sender, EventArgs e)
-    {
+    {        
         BatchBegin();
-        TranslationY = 0;
-        Border.HeightRequest = Height + 2;
+        CropPhotoPage.CurrentInstance.UpdateView();
         BatchCommit();
     }
 
@@ -280,12 +278,16 @@ public partial class CropBoxView : ContentView
 
     public void UpdateCropBoxHeight(int height)
     {
-        if (height == 420)
+        if (WidthRequest > 360)
+        {
             WidthRequest = 360;
+            Border.WidthRequest = 360;
+        }
+        else
+            WidthRequest = Border.Width;
 
-        WidthRequest = Border.Width;
         HeightRequest = height;
-        TranslationY = Math.Clamp(-Y, 0, int.MaxValue);
+        TranslationY = Math.Clamp(Y, 0, int.MaxValue);
 
         Border.HeightRequest = height;
         MoveSurfaceBody.HeightRequest = height;

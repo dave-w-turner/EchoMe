@@ -404,6 +404,11 @@ public partial class CropPhotoPage : ContentPage
 
     private void OnPageSizeChanged(object? sender, EventArgs e)
     {
+        UpdateView();
+    }
+
+    public void UpdateView()
+    {
         if (RootLayoutGrid == null || WorkspaceContainer == null || FormPanel == null || HeaderPanel == null) return;
 
         if (Width > Height)
@@ -435,7 +440,7 @@ public partial class CropPhotoPage : ContentPage
                 CroppingPane.CurrentInstance.UpdateImageHeight(220);
                 CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(220);
             }
-                        
+
             Grid.SetRow(FormPanel, 0);
             Grid.SetColumn(FormPanel, 1);
             FormPanel.WidthRequest = -1;
@@ -476,5 +481,6 @@ public partial class CropPhotoPage : ContentPage
             FormPanel.VerticalOptions = LayoutOptions.End;
             FormPanel.Margin = new Thickness(4, 4, 4, 0);
         }
+
     }
 }

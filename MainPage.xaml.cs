@@ -2,7 +2,7 @@
 using EchoMe.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-    
+
 namespace EchoMe;
 
 public partial class MainPage : ContentPage
@@ -80,5 +80,18 @@ public partial class MainPage : ContentPage
     }
 
     private async void OnManageBoardClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("ManageCollectionPage");
+
     private void OnKeyboardButtonClicked(object? sender, EventArgs e) => WordsEntry.Focus();
+
+    private void OnPageSizeChanged(object? sender, EventArgs e)
+    {
+        if (Width > Height)
+        {
+            cardsView.HeightRequest = 180;
+        }
+        else
+        {
+            cardsView.HeightRequest = 420;
+        }
+    }
 }

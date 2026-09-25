@@ -105,12 +105,19 @@ public class DatabaseService
         await InitAsync();
 
         var cardToDelete = await _database!.GetWithChildrenAsync<CommunicationCard>(cardId);
-
         if (cardToDelete == null) return;
 
         int parentImageId = cardToDelete.SourceImageId;
 
-        await _database!.DeleteAsync<HomeScreenCard>(cardId);
+        var homeScreenPin = await _database!.Table<HomeScreenCard>()
+                                            .Where(h => h.CardId == cardId) // Or whatever your link column is named!
+                                            .FirstOrDefaultAsync();
+
+        if (homeScreenPin != null)
+        {
+            await _database!.DeleteAsync(homeScreenPin);
+        }
+
         await _database!.DeleteAsync<CommunicationCard>(cardId);
 
         int remainingCardsUsingThisPhoto = await _database!.Table<CommunicationCard>()
@@ -123,6 +130,7 @@ public class DatabaseService
             System.Diagnostics.Debug.WriteLine($"--> [DB CONTROL]: Cleaned up orphaned master image ID: {parentImageId}");
         }
     }
+
 
     public async Task<bool> CheckDuplicate(string speachText)
     {
