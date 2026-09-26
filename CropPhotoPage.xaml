@@ -88,7 +88,8 @@
                     HeightRequest="420">
                 <controls:CroppingPane ImageSource="{Binding ImageSource, Source={x:Reference cropPhotoPage}}"
                                        HorizontalOptions="Fill"
-                                       VerticalOptions="Fill" />
+                                       VerticalOptions="Fill"
+                                       IsClippedToBounds="False" />
             </Border>
         </Grid>
 

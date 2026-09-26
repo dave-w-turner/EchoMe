@@ -6,6 +6,7 @@ namespace EchoMe.UserControls;
 public partial class CroppingPane : ContentView
 {
     private bool _hasInitializedDefaultBox = false;
+    public double StartWorkspaceScale = 1;
     private int _boxCounter = 0;
 
     public static Dictionary<CropBoxView, string> Boxes { get; private set; } = [];
@@ -193,8 +194,19 @@ public partial class CroppingPane : ContentView
         {
             case GestureStatus.Started:
                 Point fingerMidPoint = e.ScaleOrigin;
+
+                StartWorkspaceScale = targetImage.Scale;
                 targetImage.AnchorX = Math.Clamp(fingerMidPoint.X, 0.0, 1.0);
                 targetImage.AnchorY = Math.Clamp(fingerMidPoint.Y, 0.0, 1.0);
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+                    box.InitialScaleWidth = box.WidthRequest > 10 ? box.WidthRequest : box.Width;
+                    box.InitialScaleHeight = box.HeightRequest > 10 ? box.HeightRequest : box.Height;
+                    box.InitialPositionX = box.TranslationX;
+                    box.InitialPositionY = box.TranslationY;
+                }
                 break;
 
             case GestureStatus.Running:
@@ -206,56 +218,156 @@ public partial class CroppingPane : ContentView
                 double maxPanX = (targetImage.Width * (validScale - 1.0)) / 2;
                 double maxPanY = (targetImage.Height * (validScale - 1.0)) / 2;
 
-                CurrentlySelectedBox?.CurrentTranslationX = Math.Clamp(CurrentlySelectedBox?.CurrentTranslationX ?? 0, -maxPanX, maxPanX);
-                CurrentlySelectedBox?.CurrentTranslationY = Math.Clamp(CurrentlySelectedBox?.CurrentTranslationY ?? 0, -maxPanY, maxPanY);
+                double currentTransX = CurrentlySelectedBox?.CurrentTranslationX ?? 0;
+                double currentTransY = CurrentlySelectedBox?.CurrentTranslationY ?? 0;
+
+                currentTransX = Math.Clamp(currentTransX, -maxPanX, maxPanX);
+                currentTransY = Math.Clamp(currentTransY, -maxPanY, maxPanY);
 
                 targetImage.BatchBegin();
                 targetImage.Scale = validScale;
-                targetImage.TranslationX = CurrentlySelectedBox?.CurrentTranslationX ?? 0;
-                targetImage.TranslationY = CurrentlySelectedBox?.CurrentTranslationY ?? 0;
+                targetImage.TranslationX = currentTransX;
+                targetImage.TranslationY = currentTransY;
                 targetImage.BatchCommit();
+
+                double zoomRatioDelta = validScale / (StartWorkspaceScale > 0 ? StartWorkspaceScale : 1.0);
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+
+                    box.BatchBegin();
+
+                    box.AnchorX = targetImage.AnchorX;
+                    box.AnchorY = targetImage.AnchorY;
+
+                    double targetBoxWidth = box.InitialScaleWidth * zoomRatioDelta;
+                    double targetBoxHeight = box.InitialScaleHeight * zoomRatioDelta;
+
+                    box.UpdateCropBoxHeight(targetBoxHeight, targetBoxWidth);
+
+                    box.TranslationX = (box.InitialPositionX * zoomRatioDelta) + (currentTransX - (CurrentlySelectedBox?.StartTranslationX ?? 0));
+                    box.TranslationY = (box.InitialPositionY * zoomRatioDelta) + (currentTransY - (CurrentlySelectedBox?.StartTranslationY ?? 0));
+
+                    box.BatchCommit();
+                }
+                break;
+            case GestureStatus.Completed:
+            case GestureStatus.Canceled:
+                if (CurrentlySelectedBox != null)
+                {
+                    CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
+                    CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                }
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+
+                    box.CurrentTranslationX = box.TranslationX;
+                    box.CurrentTranslationY = box.TranslationY;
+
+                    box.InitialPositionX = box.TranslationX;
+                    box.InitialPositionY = box.TranslationY;
+                }
                 break;
         }
     }
 
     private void OnWorkspacePanned(object? sender, PanUpdatedEventArgs e)
     {
-        if (CropBoxView.CurrentWorkspaceScale <= 1.02)
-        {
-            CapturedRawPhoto.TranslationX = 0;
-            CapturedRawPhoto.TranslationY = 0;
-            CurrentlySelectedBox?.CurrentTranslationX = 0;
-            CurrentlySelectedBox?.CurrentTranslationY = 0;
-            return;
-        }
+        var targetImage = CapturedRawPhoto;
 
-        if (CapturedRawPhoto.Width <= 10 || CapturedRawPhoto.Height <= 10) return;
+        if (targetImage.Width <= 10 || targetImage.Height <= 10) return;
 
         switch (e.StatusType)
         {
             case GestureStatus.Started:
-                CurrentlySelectedBox?.StartTranslationX = CurrentlySelectedBox.CurrentTranslationX;
-                CurrentlySelectedBox?.StartTranslationY = CurrentlySelectedBox.CurrentTranslationY;
+                if (CurrentlySelectedBox != null)
+                {
+                    CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
+                    CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                }
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+                    box.InitialScaleWidth = box.WidthRequest > 10 ? box.WidthRequest : box.Width;
+                    box.InitialScaleHeight = box.HeightRequest > 10 ? box.HeightRequest : box.Height;
+                    box.InitialPositionX = box.TranslationX;
+                    box.InitialPositionY = box.TranslationY;
+                }
                 break;
 
             case GestureStatus.Running:
-                double targetX = (CurrentlySelectedBox?.StartTranslationX ?? 0) + e.TotalX;
-                double targetY = (CurrentlySelectedBox?.StartTranslationY ?? 0) + e.TotalY;
+                double baseStartX = CurrentlySelectedBox?.StartTranslationX ?? 0;
+                double baseStartY = CurrentlySelectedBox?.StartTranslationY ?? 0;
 
-                double maxPanX = CapturedRawPhoto.Width * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
-                double maxPanY = CapturedRawPhoto.Height * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
+                double targetX = baseStartX + e.TotalX;
+                double targetY = baseStartY + e.TotalY;
 
-                CurrentlySelectedBox?.CurrentTranslationX = Math.Clamp(targetX, -maxPanX, maxPanX);
-                CurrentlySelectedBox?.CurrentTranslationY = Math.Clamp(targetY, -maxPanY, maxPanY);
+                double maxPanX = targetImage.Width * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
+                double maxPanY = targetImage.Height * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
 
-                CapturedRawPhoto.BatchBegin();
-                CapturedRawPhoto.TranslationX = CurrentlySelectedBox?.CurrentTranslationX ?? 0;
-                CapturedRawPhoto.TranslationY = CurrentlySelectedBox?.CurrentTranslationY ?? 0;
-                CapturedRawPhoto.BatchCommit();
+                double clampedX = Math.Clamp(targetX, -maxPanX, maxPanX);
+                double clampedY = Math.Clamp(targetY, -maxPanY, maxPanY);
+
+                if (CurrentlySelectedBox != null)
+                {
+                    CurrentlySelectedBox.CurrentTranslationX = clampedX;
+                    CurrentlySelectedBox.CurrentTranslationY = clampedY;
+                }
+
+                targetImage.BatchBegin();
+                targetImage.TranslationX = clampedX;
+                targetImage.TranslationY = clampedY;
+                targetImage.BatchCommit();
+
+                double panRatioDelta = 1.0;
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+
+                    box.BatchBegin();
+
+                    box.AnchorX = targetImage.AnchorX;
+                    box.AnchorY = targetImage.AnchorY;
+
+                    box.TranslationX = (box.InitialPositionX * panRatioDelta) + (clampedX - baseStartX);
+                    box.TranslationY = (box.InitialPositionY * panRatioDelta) + (clampedY - baseStartY);
+
+                    box.BatchCommit();
+                }
+                break;
+
+            // 🌟 THE TRANSLATION MEMORY CURE:
+            // When the user lifts their finger after panning, commit their new resting coordinates 
+            // back into the internal registers! This ensures that your zoom code reads a clean, 
+            // updated baseline on the next touch pass, completely preventing the transition jump!
+            case GestureStatus.Completed:
+            case GestureStatus.Canceled:
+                if (CurrentlySelectedBox != null)
+                {
+                    CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
+                    CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                }
+
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+
+                    // Sync internal registers so subsequent pinch gestures read the updated location
+                    box.CurrentTranslationX = box.TranslationX;
+                    box.CurrentTranslationY = box.TranslationY;
+
+                    // Force the permanent initial tracking variables to log the final position
+                    box.InitialPositionX = box.TranslationX;
+                    box.InitialPositionY = box.TranslationY;
+                }
                 break;
         }
     }
-
     private void OnOverlayCanvasSizeChanged(object? sender, EventArgs e)
     {
         if (CapturedRawPhoto.Width > 10 && OverlayCanvas.Height > 10)

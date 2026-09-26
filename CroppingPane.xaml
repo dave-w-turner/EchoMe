@@ -9,22 +9,27 @@
 
     <Grid x:Name="CanvasContainer" 
           BackgroundColor="#151515"
-          HorizontalOptions="Center"
-          VerticalOptions="Center"
+          HorizontalOptions="Fill"
+          VerticalOptions="Fill"
           SizeChanged="OnCanvasSizeChanged">
         <Grid.GestureRecognizers>
             <PinchGestureRecognizer PinchUpdated="OnWorkspacePinched" />
             <PanGestureRecognizer PanUpdated="OnWorkspacePanned" />
         </Grid.GestureRecognizers>
-
-        <Image x:Name="CapturedRawPhoto"
+        <Grid x:Name="TransformMatrixBody" 
+          HorizontalOptions="Fill" 
+          VerticalOptions="Fill">
+            <Image x:Name="CapturedRawPhoto"
                Source="{Binding ImageSource, Source={x:Reference cropPane}}"
                Aspect="AspectFit" 
                HorizontalOptions="Fill" 
                VerticalOptions="Fill" />
-        <AbsoluteLayout x:Name="OverlayCanvas" 
-                        HorizontalOptions="Center" 
+
+            <AbsoluteLayout x:Name="OverlayCanvas" 
+                        HorizontalOptions="Fill" 
                         VerticalOptions="Fill"
+                        IsClippedToBounds="False"
                         SizeChanged="OnOverlayCanvasSizeChanged" />
+        </Grid>
     </Grid>
 </ContentView>
