@@ -62,8 +62,13 @@ public partial class CroppingPane : ContentView
         InitializeComponent();        
     }
 
-    public void AddCropBox(CommunicationCard? existingCard = null)
+    public async void AddCropBox(CommunicationCard? existingCard = null)
     {
+        if (Boxes.Count > 1)
+        {
+            SelectBox(Boxes.Last().Key);
+        }
+
         _boxCounter++;
 
         var boxName = $"Item {_boxCounter}";
@@ -75,25 +80,67 @@ public partial class CroppingPane : ContentView
         double spawnX;
         double spawnY;
 
-        CanvasContainer.Children.Add(newBox);
+        double newBoxWidth = CurrentlySelectedBox == null ? Width : CurrentlySelectedBox.Width;
+        double newBoxHeight = CurrentlySelectedBox == null ? Height : CurrentlySelectedBox.Height;
 
-        double newBoxWidth = CurrentlySelectedBox == null ? Width : Width - 100;
-        double newBoxHeight = CurrentlySelectedBox == null ? Height : Height - 100;
+        if (CurrentlySelectedBox == null)
+        {
+            spawnX = X + (Width - newBoxWidth) / 2;
+            spawnY = Y + (Height - newBoxHeight) / 2;
+        }
+        else
+        {
+            double proposedTranslationX = CurrentlySelectedBox.TranslationX + CurrentlySelectedBox.Width + 6;
+            double proposedTranslationY = CurrentlySelectedBox.TranslationY;
 
-        spawnX = X + (Width - newBoxWidth) / 2;
-        spawnY = Y + (Height - newBoxHeight) / 2;
+            double absoluteCanvasLimitWidth = CanvasContainer.Width > 10 ? CanvasContainer.Width : 360.0;
+            double absoluteCanvasLimitHeight = CanvasContainer.Height > 10 ? CanvasContainer.Height : 420.0;
 
-        if (spawnX < 0) spawnX = 0;
-        if (spawnY < 0) spawnY = 0;
+            if ((proposedTranslationX + CurrentlySelectedBox.Width) > absoluteCanvasLimitWidth - CurrentlySelectedBox.Width - 50)
+            {
+                double lowestXOffset = 0;
+
+                foreach (var box in Boxes)
+                {
+                    if (box.Key.CurrentTranslationX < lowestXOffset)
+                        lowestXOffset = box.Key.CurrentTranslationX;
+                }
+
+                newBox.TranslationX = lowestXOffset;
+
+                if ((proposedTranslationY + CurrentlySelectedBox.Height) > absoluteCanvasLimitHeight - CurrentlySelectedBox.Height - 150)
+                {
+                    await CropPhotoPage.CurrentInstance.DisplayAlertAsync("Canvas Full", "Maximum number of selection boxes. Please delete some, make them smaller, or extract your selections and start again.", "OK");
+                    return;
+                }
+                else
+                {
+                    newBox.TranslationY = proposedTranslationY + CurrentlySelectedBox.Height + 6;
+                }
+            }
+            else
+            {
+                newBox.TranslationX = proposedTranslationX;
+                newBox.TranslationY = proposedTranslationY;
+            }
+
+            spawnX = newBox.TranslationX;
+            spawnY = newBox.TranslationY;
+
+            newBox.InitialScaleWidth = newBoxWidth;
+            newBox.InitialScaleHeight = newBoxHeight;
+        }
 
         newBox.WidthRequest = newBoxWidth;
         newBox.HeightRequest = newBoxHeight;
 
-        AbsoluteLayout.SetLayoutBounds(newBox, new Rect(spawnX, spawnY, newBoxWidth, newBoxHeight));
         AbsoluteLayout.SetLayoutFlags(newBox, AbsoluteLayoutFlags.None);
+        AbsoluteLayout.SetLayoutBounds(newBox, new Rect(spawnX, spawnY, newBoxWidth, newBoxHeight));
+
+        CanvasContainer.Children.Add(newBox);
 
         Boxes.Add(newBox, existingCard != null ? existingCard.LabelText : boxName);
-        Boxes = Boxes = Boxes.OrderBy(item => item.Value)
+        Boxes = Boxes.OrderBy(item => item.Value)
              .ToDictionary(pair => pair.Key, pair => pair.Value);
 
         SelectBox(newBox);
@@ -184,7 +231,7 @@ public partial class CroppingPane : ContentView
         }
     }
 
-    private void OnWorkspacePinched(object? sender, PinchGestureUpdatedEventArgs e)
+    public void OnWorkspacePinched(object? sender, PinchGestureUpdatedEventArgs e)
     {
         var targetImage = CapturedRawPhoto;
 
@@ -193,11 +240,13 @@ public partial class CroppingPane : ContentView
         switch (e.Status)
         {
             case GestureStatus.Started:
-                Point fingerMidPoint = e.ScaleOrigin;
-
                 StartWorkspaceScale = targetImage.Scale;
-                targetImage.AnchorX = Math.Clamp(fingerMidPoint.X, 0.0, 1.0);
-                targetImage.AnchorY = Math.Clamp(fingerMidPoint.Y, 0.0, 1.0);
+
+                targetImage.AnchorX = 0.5;
+                targetImage.AnchorY = 0.5;
+
+                double canvasCenterX = targetImage.Width / 2.0;
+                double canvasCenterY = targetImage.Height / 2.0;
 
                 foreach (var boxPair in Boxes)
                 {
@@ -206,6 +255,12 @@ public partial class CroppingPane : ContentView
                     box.InitialScaleHeight = box.HeightRequest > 10 ? box.HeightRequest : box.Height;
                     box.InitialPositionX = box.TranslationX;
                     box.InitialPositionY = box.TranslationY;
+
+                    double boxOriginalCenterX = box.X + (box.InitialScaleWidth / 2.0) + box.InitialPositionX;
+                    double boxOriginalCenterY = box.Y + (box.InitialScaleHeight / 2.0) + box.InitialPositionY;
+
+                    box.ZoomCenterOffsetX = boxOriginalCenterX - canvasCenterX;
+                    box.ZoomCenterOffsetY = boxOriginalCenterY - canvasCenterY;
                 }
                 break;
 
@@ -246,12 +301,13 @@ public partial class CroppingPane : ContentView
 
                     box.UpdateCropBoxHeight(targetBoxHeight, targetBoxWidth);
 
-                    box.TranslationX = (box.InitialPositionX * zoomRatioDelta) + (currentTransX - (CurrentlySelectedBox?.StartTranslationX ?? 0));
-                    box.TranslationY = (box.InitialPositionY * zoomRatioDelta) + (currentTransY - (CurrentlySelectedBox?.StartTranslationY ?? 0));
+                    box.TranslationX = (box.InitialPositionX * zoomRatioDelta) + (currentTransX - ((CurrentlySelectedBox?.StartTranslationX ?? 0) * zoomRatioDelta));
+                    box.TranslationY = (box.InitialPositionY * zoomRatioDelta) + (currentTransY - ((CurrentlySelectedBox?.StartTranslationY ?? 0) * zoomRatioDelta));
 
                     box.BatchCommit();
                 }
                 break;
+
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
                 if (CurrentlySelectedBox != null)
@@ -270,15 +326,68 @@ public partial class CroppingPane : ContentView
                     box.InitialPositionX = box.TranslationX;
                     box.InitialPositionY = box.TranslationY;
                 }
+
+                if (CurrentlySelectedBox != null && CropBoxView.CurrentWorkspaceScale > 1.05)
+                {
+                    double viewportCenterX = targetImage.Width / 2.0;
+                    double viewportCenterY = targetImage.Height / 2.0;
+
+                    double boxLiveX = CurrentlySelectedBox.X + (CurrentlySelectedBox.Width / 2.0) + CurrentlySelectedBox.TranslationX;
+                    double boxLiveY = CurrentlySelectedBox.Y + (CurrentlySelectedBox.Height / 2.0) + CurrentlySelectedBox.TranslationY;
+
+                    double focusShiftX = viewportCenterX - boxLiveX;
+                    double focusShiftY = viewportCenterY - boxLiveY;
+
+                    double newTargetTransX = targetImage.TranslationX + focusShiftX;
+                    double newTargetTargetY = targetImage.TranslationY + focusShiftY;
+
+                    double maxPanLimitX = targetImage.Width * (CropBoxView.CurrentWorkspaceScale - 1.0) / 2;
+                    double maxPanLimitY = targetImage.Height * (CropBoxView.CurrentWorkspaceScale - 1.0) / 2;
+
+                    double finalFocusX = Math.Clamp(newTargetTransX, -maxPanLimitX, maxPanLimitX);
+                    double finalFocusY = Math.Clamp(newTargetTargetY, -maxPanLimitY, maxPanLimitY);
+
+                    double netAdjustmentDeltaX = finalFocusX - targetImage.TranslationX;
+                    double netAdjustmentDeltaY = finalFocusY - targetImage.TranslationY;
+
+                    targetImage.BatchBegin();
+                    targetImage.TranslationX = finalFocusX;
+                    targetImage.TranslationY = finalFocusY;
+                    targetImage.BatchCommit();
+
+                    if (CurrentlySelectedBox != null)
+                    {
+                        CurrentlySelectedBox.StartTranslationX = finalFocusX;
+                        CurrentlySelectedBox.StartTranslationY = finalFocusY;
+                        CurrentlySelectedBox.CurrentTranslationX = finalFocusX;
+                        CurrentlySelectedBox.CurrentTranslationY = finalFocusY;
+                    }
+
+                    foreach (var boxPair in Boxes)
+                    {
+                        CropBoxView box = boxPair.Key;
+                        box.BatchBegin();
+
+                        box.TranslationX += netAdjustmentDeltaX;
+                        box.TranslationY += netAdjustmentDeltaY;
+
+                        box.CurrentTranslationX = box.TranslationX;
+                        box.CurrentTranslationY = box.TranslationY;
+                        box.InitialPositionX = box.TranslationX;
+                        box.InitialPositionY = box.TranslationY;
+
+                        box.BatchCommit();
+                    }
+                }
                 break;
         }
     }
 
-    private void OnWorkspacePanned(object? sender, PanUpdatedEventArgs e)
+    public void OnWorkspacePanned(object? sender, PanUpdatedEventArgs e)
     {
         var targetImage = CapturedRawPhoto;
 
-        if (targetImage.Width <= 10 || targetImage.Height <= 10) return;
+        if (targetImage == null || targetImage.Width <= 10 || targetImage.Height <= 10) return;
 
         switch (e.StatusType)
         {
@@ -287,6 +396,8 @@ public partial class CroppingPane : ContentView
                 {
                     CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
                     CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                    CurrentlySelectedBox.CurrentTranslationX = targetImage.TranslationX;
+                    CurrentlySelectedBox.CurrentTranslationY = targetImage.TranslationY;
                 }
 
                 foreach (var boxPair in Boxes)
@@ -294,11 +405,11 @@ public partial class CroppingPane : ContentView
                     CropBoxView box = boxPair.Key;
                     box.InitialScaleWidth = box.WidthRequest > 10 ? box.WidthRequest : box.Width;
                     box.InitialScaleHeight = box.HeightRequest > 10 ? box.HeightRequest : box.Height;
+
                     box.InitialPositionX = box.TranslationX;
                     box.InitialPositionY = box.TranslationY;
                 }
                 break;
-
             case GestureStatus.Running:
                 double baseStartX = CurrentlySelectedBox?.StartTranslationX ?? 0;
                 double baseStartY = CurrentlySelectedBox?.StartTranslationY ?? 0;
@@ -306,8 +417,15 @@ public partial class CroppingPane : ContentView
                 double targetX = baseStartX + e.TotalX;
                 double targetY = baseStartY + e.TotalY;
 
-                double maxPanX = targetImage.Width * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
-                double maxPanY = targetImage.Height * (CropBoxView.CurrentWorkspaceScale - 1) / 2;
+                double currentScale = targetImage.Scale > 0 ? targetImage.Scale : 1.0;
+
+                double maxPanX = targetImage.Width * (currentScale - 1) / 2;
+                double maxPanY = targetImage.Height * (currentScale - 1) / 2;
+
+                if (targetImage.Width > 0 && targetImage.Height > 0)
+                {
+                    maxPanY = (targetImage.Height * currentScale) / 2;
+                }
 
                 double clampedX = Math.Clamp(targetX, -maxPanX, maxPanX);
                 double clampedY = Math.Clamp(targetY, -maxPanY, maxPanY);
@@ -328,11 +446,10 @@ public partial class CroppingPane : ContentView
                 foreach (var boxPair in Boxes)
                 {
                     CropBoxView box = boxPair.Key;
-
                     box.BatchBegin();
 
-                    box.AnchorX = targetImage.AnchorX;
-                    box.AnchorY = targetImage.AnchorY;
+                    box.AnchorX = 0.5;
+                    box.AnchorY = 0.5;
 
                     box.TranslationX = (box.InitialPositionX * panRatioDelta) + (clampedX - baseStartX);
                     box.TranslationY = (box.InitialPositionY * panRatioDelta) + (clampedY - baseStartY);
@@ -341,33 +458,31 @@ public partial class CroppingPane : ContentView
                 }
                 break;
 
-            // 🌟 THE TRANSLATION MEMORY CURE:
-            // When the user lifts their finger after panning, commit their new resting coordinates 
-            // back into the internal registers! This ensures that your zoom code reads a clean, 
-            // updated baseline on the next touch pass, completely preventing the transition jump!
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
                 if (CurrentlySelectedBox != null)
                 {
                     CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
                     CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                    CurrentlySelectedBox.CurrentTranslationX = targetImage.TranslationX;
+                    CurrentlySelectedBox.CurrentTranslationY = targetImage.TranslationY;
                 }
 
                 foreach (var boxPair in Boxes)
                 {
                     CropBoxView box = boxPair.Key;
 
-                    // Sync internal registers so subsequent pinch gestures read the updated location
                     box.CurrentTranslationX = box.TranslationX;
                     box.CurrentTranslationY = box.TranslationY;
 
-                    // Force the permanent initial tracking variables to log the final position
                     box.InitialPositionX = box.TranslationX;
                     box.InitialPositionY = box.TranslationY;
                 }
                 break;
+
         }
     }
+
     private void OnOverlayCanvasSizeChanged(object? sender, EventArgs e)
     {
         if (CapturedRawPhoto.Width > 10 && OverlayCanvas.Height > 10)
@@ -377,7 +492,7 @@ public partial class CroppingPane : ContentView
         }
     }
 
-    public void UpdateImageHeight(int height)
+    public void UpdateImageHeight(double height)
     {
         CapturedRawPhoto.HeightRequest = height;
 

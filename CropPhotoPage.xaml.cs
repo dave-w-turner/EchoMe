@@ -428,17 +428,20 @@ public partial class CropPhotoPage : ContentPage
 
             WorkspaceContainer.RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Auto)];
 
-            var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
-            if (croppingBorder != null)
+            if (CroppingPane.Boxes.Count <= 1)
             {
-                croppingBorder.WidthRequest = 360;
-                croppingBorder.HeightRequest = 220;
-                croppingBorder.HorizontalOptions = LayoutOptions.Center;
-                croppingBorder.VerticalOptions = LayoutOptions.Start;
-                croppingBorder.Margin = new Thickness(0, 4, 0, 0);
+                var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
+                if (croppingBorder != null)
+                {
+                    croppingBorder.WidthRequest = 360;
+                    croppingBorder.HeightRequest = 220;
+                    croppingBorder.HorizontalOptions = LayoutOptions.Center;
+                    croppingBorder.VerticalOptions = LayoutOptions.Start;
+                    croppingBorder.Margin = new Thickness(0, 4, 0, 0);
 
-                CroppingPane.CurrentInstance.UpdateImageHeight(220);
-                CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(220);
+                    CroppingPane.CurrentInstance.UpdateImageHeight(220);
+                    CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(220);
+                }
             }
 
             Grid.SetRow(FormPanel, 0);
@@ -462,16 +465,19 @@ public partial class CropPhotoPage : ContentPage
             WorkspaceContainer.Margin = new Thickness(0, 0, 0, 140);
             WorkspaceContainer.RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star)];
 
-            var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
-            if (croppingBorder != null)
+            if (CroppingPane.Boxes.Count <= 1)
             {
-                croppingBorder.WidthRequest = 360;
-                croppingBorder.HeightRequest = 420;
-                croppingBorder.HorizontalOptions = LayoutOptions.Center;
-                croppingBorder.VerticalOptions = LayoutOptions.Start;
+                var croppingBorder = WorkspaceContainer.FindByName<Border>("CroppingPaneBorder") ?? WorkspaceContainer.Children.OfType<Border>().FirstOrDefault();
+                if (croppingBorder != null)
+                {
+                    croppingBorder.WidthRequest = 360;
+                    croppingBorder.HeightRequest = 420;
+                    croppingBorder.HorizontalOptions = LayoutOptions.Center;
+                    croppingBorder.VerticalOptions = LayoutOptions.Start;
 
-                CroppingPane.CurrentInstance.UpdateImageHeight(420);
-                CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(420);
+                    CroppingPane.CurrentInstance.UpdateImageHeight(420);
+                    CroppingPane.CurrentlySelectedBox?.UpdateCropBoxHeight(420);
+                }
             }
 
             Grid.SetRow(FormPanel, 1);
