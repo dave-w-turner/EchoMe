@@ -64,6 +64,81 @@ public partial class CroppingPane : ContentView
 
     public async void AddCropBox(CommunicationCard? existingCard = null)
     {
+        var targetImage = CapturedRawPhoto;
+
+        if (targetImage != null && CropBoxView.CurrentWorkspaceScale > 1.02)
+        {
+            StartWorkspaceScale = targetImage.Scale;
+            targetImage.AnchorX = 0.5;
+            targetImage.AnchorY = 0.5;
+            double canvasCenterX = targetImage.Width / 2.0;
+            double canvasCenterY = targetImage.Height / 2.0;
+
+            foreach (var boxPair in Boxes)
+            {
+                CropBoxView box = boxPair.Key;
+                box.InitialScaleWidth = box.WidthRequest > 10 ? box.WidthRequest : box.Width;
+                box.InitialScaleHeight = box.HeightRequest > 10 ? box.HeightRequest : box.Height;
+                box.InitialPositionX = box.TranslationX;
+                box.InitialPositionY = box.TranslationY;
+
+                double boxOriginalCenterX = box.X + (box.InitialScaleWidth / 2.0) + box.InitialPositionX;
+                double boxOriginalCenterY = box.Y + (box.InitialScaleHeight / 2.0) + box.InitialPositionY;
+
+                box.ZoomCenterOffsetX = boxOriginalCenterX - canvasCenterX;
+                box.ZoomCenterOffsetY = boxOriginalCenterY - canvasCenterY;
+            }
+
+            double validScale = 1.0;
+            CropBoxView.CurrentWorkspaceScale = validScale;
+
+            targetImage.BatchBegin();
+            targetImage.Scale = validScale;
+            targetImage.TranslationX = 0;
+            targetImage.TranslationY = 0;
+            targetImage.BatchCommit();
+
+            double zoomRatioDelta = validScale / (StartWorkspaceScale > 0 ? StartWorkspaceScale : 1.0);
+
+            foreach (var boxPair in Boxes)
+            {
+                CropBoxView box = boxPair.Key;
+                box.BatchBegin();
+
+                box.AnchorX = targetImage.AnchorX;
+                box.AnchorY = targetImage.AnchorY;
+
+                double targetBoxWidth = box.InitialScaleWidth * zoomRatioDelta;
+                double targetBoxHeight = box.InitialScaleHeight * zoomRatioDelta;
+
+                box.UpdateCropBoxHeight(targetBoxHeight, targetBoxWidth);
+
+                box.TranslationX = (box.InitialPositionX * zoomRatioDelta) + (0 - ((CurrentlySelectedBox?.StartTranslationX ?? 0) * zoomRatioDelta));
+                box.TranslationY = (box.InitialPositionY * zoomRatioDelta) + (0 - ((CurrentlySelectedBox?.StartTranslationY ?? 0) * zoomRatioDelta));
+
+                box.BatchCommit();
+            }
+
+            if (CurrentlySelectedBox != null)
+            {
+                CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
+                CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+            }
+
+            foreach (var boxPair in Boxes)
+            {
+                CropBoxView box = boxPair.Key;
+
+                box.CurrentTranslationX = box.TranslationX;
+                box.CurrentTranslationY = box.TranslationY;
+
+                box.InitialPositionX = box.TranslationX;
+                box.InitialPositionY = box.TranslationY;
+            }
+
+            await Task.Yield();
+        }
+
         if (Boxes.Count > 1)
         {
             SelectBox(Boxes.Last().Key);
@@ -80,8 +155,10 @@ public partial class CroppingPane : ContentView
         double spawnX;
         double spawnY;
 
-        double newBoxWidth = CurrentlySelectedBox == null ? Width : CurrentlySelectedBox.Width;
-        double newBoxHeight = CurrentlySelectedBox == null ? Height : CurrentlySelectedBox.Height;
+        var lastBox = Boxes.Count != 0 ? Boxes.Last().Key : CurrentlySelectedBox;
+
+        double newBoxWidth = lastBox == null ? Width : lastBox.Width;
+        double newBoxHeight = lastBox == null ? Height : lastBox.Height;
 
         if (CurrentlySelectedBox == null)
         {
@@ -90,16 +167,23 @@ public partial class CroppingPane : ContentView
         }
         else
         {
-            double proposedTranslationX = CurrentlySelectedBox.TranslationX + CurrentlySelectedBox.Width + 6;
-            double proposedTranslationY = CurrentlySelectedBox.TranslationY;
+            double proposedTranslationX = lastBox.TranslationX + lastBox.Width + 5;
+            double proposedTranslationY = lastBox.TranslationY;
+            double activeScale = CropBoxView.CurrentWorkspaceScale > 0 ? CropBoxView.CurrentWorkspaceScale : 1.0;
+            double absoluteCanvasLimitWidth = (CanvasContainer.Width > 10 ? CanvasContainer.Width : 360.0) * activeScale;
+            double absoluteCanvasLimitHeight = (CanvasContainer.Height > 10 ? CanvasContainer.Height : 420.0) * activeScale;
 
-            double absoluteCanvasLimitWidth = CanvasContainer.Width > 10 ? CanvasContainer.Width : 360.0;
-            double absoluteCanvasLimitHeight = CanvasContainer.Height > 10 ? CanvasContainer.Height : 420.0;
-
-            if ((proposedTranslationX + CurrentlySelectedBox.Width) > absoluteCanvasLimitWidth - CurrentlySelectedBox.Width - 50)
+            if ((proposedTranslationX + newBoxWidth) > absoluteCanvasLimitWidth - 90.0)
             {
-                double lowestXOffset = 0;
+                double nextRowTargetY = proposedTranslationY + lastBox.Height + 6;
 
+                if ((nextRowTargetY + lastBox.Height) > absoluteCanvasLimitHeight - 80.0)
+                {
+                    await CropPhotoPage.CurrentInstance.DisplayAlertAsync("Canvas Full", "Maximum number of selection boxes. Please delete some, make them smaller, or extract your selections and start again.", "OK");
+                    return;
+                }
+
+                double lowestXOffset = 0;
                 foreach (var box in Boxes)
                 {
                     if (box.Key.CurrentTranslationX < lowestXOffset)
@@ -107,16 +191,7 @@ public partial class CroppingPane : ContentView
                 }
 
                 newBox.TranslationX = lowestXOffset;
-
-                if ((proposedTranslationY + CurrentlySelectedBox.Height) > absoluteCanvasLimitHeight - CurrentlySelectedBox.Height - 150)
-                {
-                    await CropPhotoPage.CurrentInstance.DisplayAlertAsync("Canvas Full", "Maximum number of selection boxes. Please delete some, make them smaller, or extract your selections and start again.", "OK");
-                    return;
-                }
-                else
-                {
-                    newBox.TranslationY = proposedTranslationY + CurrentlySelectedBox.Height + 6;
-                }
+                newBox.TranslationY = nextRowTargetY;
             }
             else
             {
@@ -129,6 +204,11 @@ public partial class CroppingPane : ContentView
 
             newBox.InitialScaleWidth = newBoxWidth;
             newBox.InitialScaleHeight = newBoxHeight;
+
+            newBox.CurrentTranslationX = newBox.TranslationX;
+            newBox.CurrentTranslationY = newBox.TranslationY;
+            newBox.InitialPositionX = newBox.TranslationX;
+            newBox.InitialPositionY = newBox.TranslationY;
         }
 
         newBox.WidthRequest = newBoxWidth;
@@ -144,6 +224,7 @@ public partial class CroppingPane : ContentView
              .ToDictionary(pair => pair.Key, pair => pair.Value);
 
         SelectBox(newBox);
+        FocusBox();
     }
 
     public async void DeleteCropBox()
@@ -162,6 +243,7 @@ public partial class CroppingPane : ContentView
         CanvasContainer.Children.Remove(CurrentlySelectedBox);
         Boxes.Remove(CurrentlySelectedBox);
         SelectBox(Boxes.Last().Key);
+        FocusBox();
     }
 
     public static void UpdateCropBoxName(string name)
@@ -197,36 +279,98 @@ public partial class CroppingPane : ContentView
         SelectedBoxChanged?.Invoke(CurrentInstance, target);
     }
 
-    private void OnCanvasSizeChanged(object? sender, EventArgs e)
+    private void FocusBox()
     {
-        if (_hasInitializedDefaultBox) return;
+        var targetImage = CapturedRawPhoto;
 
-        double actualWidth = CanvasContainer.Width;
-        double actualHeight = CanvasContainer.Height;
+        if (targetImage == null || targetImage.Width <= 10 || targetImage.Height <= 10) return;
 
-        if (actualWidth <= 10) actualWidth = 360;
-        if (actualHeight <= 10) actualHeight = 420;
+        if (CurrentlySelectedBox == null) return;
 
-        _hasInitializedDefaultBox = true;
+        double activeScale = CropBoxView.CurrentWorkspaceScale;
+        double boxWidth = CurrentlySelectedBox.Width > 0 ? CurrentlySelectedBox.Width : CurrentlySelectedBox.WidthRequest;
+        double boxHeight = CurrentlySelectedBox.Height > 0 ? CurrentlySelectedBox.Height : CurrentlySelectedBox.HeightRequest;
 
-        if (CurrentlySelectedBox != null)
+        if (activeScale <= 1.05)
         {
-            Grid moveSurface = (Grid)CurrentlySelectedBox.FindByName("MoveSurfaceBody");
-
-            if (moveSurface != null)
+            double visibleViewportHeight = CanvasContainer.Height > 10 ? CanvasContainer.Height : 420.0;
+            
+            if (CurrentlySelectedBox.TranslationY + (boxHeight * 2) > visibleViewportHeight)
             {
-                moveSurface.WidthRequest = actualWidth;
-                moveSurface.HeightRequest = actualHeight;
+                targetImage.BatchBegin();
+                targetImage.TranslationY += CurrentlySelectedBox.CurrentTranslationY;
+                targetImage.BatchCommit();
 
-                moveSurface.BatchBegin();
-                AbsoluteLayout.SetLayoutBounds(moveSurface, new Rect(0, 0, actualWidth, actualHeight));
+                foreach (var boxPair in Boxes)
+                {
+                    CropBoxView box = boxPair.Key;
+                    box.BatchBegin();
 
-                double initialHandleX = actualWidth - 40;
-                double initialHandleY = actualHeight - 40;
+                    box.TranslationY += CurrentlySelectedBox.CurrentTranslationY;
 
-                AbsoluteLayout.SetLayoutBounds(moveSurface, new Rect(initialHandleX, initialHandleY, 40, 40));
+                    box.CurrentTranslationY = box.TranslationY;
+                    box.InitialPositionY = box.TranslationY;
 
-                moveSurface.BatchCommit();
+                    box.BatchCommit();
+                }
+
+                CurrentlySelectedBox.StartTranslationX = targetImage.TranslationX;
+                CurrentlySelectedBox.StartTranslationY = targetImage.TranslationY;
+                CurrentlySelectedBox.CurrentTranslationX = targetImage.TranslationX;
+                CurrentlySelectedBox.CurrentTranslationY = targetImage.TranslationY;
+            }
+            return;
+        }
+
+        if (activeScale > 1.05)
+        {
+            double viewportCenterX = targetImage.Width / 2.0;
+            double viewportCenterY = targetImage.Height / 2.0;
+
+            double boxLiveX = CurrentlySelectedBox.X + (boxWidth / 2.0) + CurrentlySelectedBox.TranslationX;
+            double boxLiveY = CurrentlySelectedBox.Y + (boxHeight / 2.0) + CurrentlySelectedBox.TranslationY;
+
+            double focusShiftX = viewportCenterX - boxLiveX;
+            double focusShiftY = viewportCenterY - boxLiveY;
+
+            double newTargetTransX = targetImage.TranslationX + focusShiftX;
+            double newTargetTargetY = targetImage.TranslationY + focusShiftY;
+            double maxPanLimitX = targetImage.Width * activeScale;
+            double maxPanLimitY = targetImage.Height * activeScale;
+
+            double finalFocusX = Math.Clamp(newTargetTransX, -maxPanLimitX, maxPanLimitX);
+            double finalFocusY = Math.Clamp(newTargetTargetY, -maxPanLimitY, maxPanLimitY);
+
+            double netAdjustmentDeltaX = finalFocusX - targetImage.TranslationX;
+            double netAdjustmentDeltaY = finalFocusY - targetImage.TranslationY;
+
+            targetImage.BatchBegin();
+            targetImage.TranslationX = finalFocusX;
+            targetImage.TranslationY = finalFocusY;
+            targetImage.BatchCommit();
+
+            if (CurrentlySelectedBox != null)
+            {
+                CurrentlySelectedBox.StartTranslationX = finalFocusX;
+                CurrentlySelectedBox.StartTranslationY = finalFocusY;
+                CurrentlySelectedBox.CurrentTranslationX = finalFocusX;
+                CurrentlySelectedBox.CurrentTranslationY = finalFocusY;
+            }
+
+            foreach (var boxPair in Boxes)
+            {
+                CropBoxView box = boxPair.Key;
+                box.BatchBegin();
+
+                box.TranslationX += netAdjustmentDeltaX;
+                box.TranslationY += netAdjustmentDeltaY;
+
+                box.CurrentTranslationX = box.TranslationX;
+                box.CurrentTranslationY = box.TranslationY;
+                box.InitialPositionX = box.TranslationX;
+                box.InitialPositionY = box.TranslationY;
+
+                box.BatchCommit();
             }
         }
     }
@@ -327,58 +471,7 @@ public partial class CroppingPane : ContentView
                     box.InitialPositionY = box.TranslationY;
                 }
 
-                if (CurrentlySelectedBox != null && CropBoxView.CurrentWorkspaceScale > 1.05)
-                {
-                    double viewportCenterX = targetImage.Width / 2.0;
-                    double viewportCenterY = targetImage.Height / 2.0;
-
-                    double boxLiveX = CurrentlySelectedBox.X + (CurrentlySelectedBox.Width / 2.0) + CurrentlySelectedBox.TranslationX;
-                    double boxLiveY = CurrentlySelectedBox.Y + (CurrentlySelectedBox.Height / 2.0) + CurrentlySelectedBox.TranslationY;
-
-                    double focusShiftX = viewportCenterX - boxLiveX;
-                    double focusShiftY = viewportCenterY - boxLiveY;
-
-                    double newTargetTransX = targetImage.TranslationX + focusShiftX;
-                    double newTargetTargetY = targetImage.TranslationY + focusShiftY;
-
-                    double maxPanLimitX = targetImage.Width * (CropBoxView.CurrentWorkspaceScale - 1.0) / 2;
-                    double maxPanLimitY = targetImage.Height * (CropBoxView.CurrentWorkspaceScale - 1.0) / 2;
-
-                    double finalFocusX = Math.Clamp(newTargetTransX, -maxPanLimitX, maxPanLimitX);
-                    double finalFocusY = Math.Clamp(newTargetTargetY, -maxPanLimitY, maxPanLimitY);
-
-                    double netAdjustmentDeltaX = finalFocusX - targetImage.TranslationX;
-                    double netAdjustmentDeltaY = finalFocusY - targetImage.TranslationY;
-
-                    targetImage.BatchBegin();
-                    targetImage.TranslationX = finalFocusX;
-                    targetImage.TranslationY = finalFocusY;
-                    targetImage.BatchCommit();
-
-                    if (CurrentlySelectedBox != null)
-                    {
-                        CurrentlySelectedBox.StartTranslationX = finalFocusX;
-                        CurrentlySelectedBox.StartTranslationY = finalFocusY;
-                        CurrentlySelectedBox.CurrentTranslationX = finalFocusX;
-                        CurrentlySelectedBox.CurrentTranslationY = finalFocusY;
-                    }
-
-                    foreach (var boxPair in Boxes)
-                    {
-                        CropBoxView box = boxPair.Key;
-                        box.BatchBegin();
-
-                        box.TranslationX += netAdjustmentDeltaX;
-                        box.TranslationY += netAdjustmentDeltaY;
-
-                        box.CurrentTranslationX = box.TranslationX;
-                        box.CurrentTranslationY = box.TranslationY;
-                        box.InitialPositionX = box.TranslationX;
-                        box.InitialPositionY = box.TranslationY;
-
-                        box.BatchCommit();
-                    }
-                }
+                FocusBox();
                 break;
         }
     }
@@ -387,7 +480,7 @@ public partial class CroppingPane : ContentView
     {
         var targetImage = CapturedRawPhoto;
 
-        if (targetImage == null || targetImage.Width <= 10 || targetImage.Height <= 10) return;
+        if (targetImage == null || targetImage.Width <= 10 || targetImage.Height <= 10 || CropBoxView.CurrentWorkspaceScale <= 1.02) return;
 
         switch (e.StatusType)
         {
@@ -498,5 +591,39 @@ public partial class CroppingPane : ContentView
 
         if (height == 420)
             CapturedRawPhoto.WidthRequest = 360;
+    }
+
+    private void OnCanvasSizeChanged(object? sender, EventArgs e)
+    {
+        if (_hasInitializedDefaultBox) return;
+
+        double actualWidth = CanvasContainer.Width;
+        double actualHeight = CanvasContainer.Height;
+
+        if (actualWidth <= 10) actualWidth = 360;
+        if (actualHeight <= 10) actualHeight = 420;
+
+        _hasInitializedDefaultBox = true;
+
+        if (CurrentlySelectedBox != null)
+        {
+            Grid moveSurface = (Grid)CurrentlySelectedBox.FindByName("MoveSurfaceBody");
+
+            if (moveSurface != null)
+            {
+                moveSurface.WidthRequest = actualWidth;
+                moveSurface.HeightRequest = actualHeight;
+
+                moveSurface.BatchBegin();
+                AbsoluteLayout.SetLayoutBounds(moveSurface, new Rect(0, 0, actualWidth, actualHeight));
+
+                double initialHandleX = actualWidth - 40;
+                double initialHandleY = actualHeight - 40;
+
+                AbsoluteLayout.SetLayoutBounds(moveSurface, new Rect(initialHandleX, initialHandleY, 40, 40));
+
+                moveSurface.BatchCommit();
+            }
+        }
     }
 }

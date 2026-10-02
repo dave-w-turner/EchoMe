@@ -233,12 +233,6 @@ public partial class CropPhotoPage : ContentPage
     {
         if (e == null) return;
 
-        if (e.FindByName("Border") is Border innerBorder)
-        {
-            innerBorder.Stroke = Colors.DeepSkyBlue;
-            innerBorder.BackgroundColor = Colors.Transparent;
-        }
-
         SelectedBoxIndicatorText = $"Selected: {e.Name}";
 
         if (!e.Name.StartsWith("Item"))
@@ -487,6 +481,5 @@ public partial class CropPhotoPage : ContentPage
             FormPanel.VerticalOptions = LayoutOptions.End;
             FormPanel.Margin = new Thickness(4, 4, 4, 0);
         }
-
     }
 }
