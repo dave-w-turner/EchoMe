@@ -254,8 +254,15 @@ public partial class CropBoxView : ContentView
 
     private void OnWorkspacePanned(object? sender, PanUpdatedEventArgs e)
     {
-        if (CurrentWorkspaceScale > 1 && Width >= CroppingPane.CurrentInstance.OverlayCanvasWidth - 100 && Height >= CroppingPane.CurrentInstance.OverlayCanvasHeight - 100)
+        if (CroppingPane.CurrentInstance == null) return;
+
+        double liveBoxWidth = Width * CurrentWorkspaceScale;
+        double liveBoxHeight = Height * CurrentWorkspaceScale;
+
+        if (CurrentWorkspaceScale > 1 && liveBoxWidth >= CroppingPane.CurrentInstance.Width - 100 && liveBoxHeight >= CroppingPane.CurrentInstance.OverlayCanvasHeight - 100)
+        {
             CroppingPane.CurrentInstance.OnWorkspacePanned(sender, e);
+        }
     }
 
     public void UpdateCropBoxHeight(double height, double width = 0)
